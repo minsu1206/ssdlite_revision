@@ -1,6 +1,6 @@
 # SSDlite_revision
 Project :: rethink ssdlite and improve
-Contributor :: minsu1206, Seungmin-U
+<br> Contributor :: minsu1206, Seungmin-U
 
 # Code
 Code mainly based on https://github.com/qfgaohao/pytorch-ssd
