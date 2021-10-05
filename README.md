@@ -5,7 +5,7 @@ By minsu1206, seugmin-U
 # Code
 mainly based on https://github.com/qfgaohao/pytorch-ssd
 <br> some references
-<br></sp></sp> https://github.com/eriklindernoren/PyTorch-YOLOv3
+<br> &nbsp https://github.com/eriklindernoren/PyTorch-YOLOv3
   
 # Trials
 details described at __
