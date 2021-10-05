@@ -1,1 +1,3 @@
-Changes on mobilenet_v2.py
+Detail descriptions of our trials
+
+1. 
