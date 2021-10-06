@@ -7,7 +7,6 @@ import itertools
 import torch
 from torch.utils.data import DataLoader, ConcatDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
-from vision.datasets.collation import object_detection_collate
 from vision.utils.misc import str2bool, Timer, freeze_net_layers, store_labels
 from vision.ssd.ssd import MatchPrior
 from vision.ssd.vgg_ssd import create_vgg_ssd
@@ -23,9 +22,7 @@ from vision.ssd.config import vgg_ssd_config
 from vision.ssd.config import mobilenetv1_ssd_config
 from vision.ssd.config import squeezenet_ssd_config
 from vision.ssd.data_preprocessing import TrainAugmentation, TestTransform
-import torchvision.transforms as transforms
 from vision.datasets.coco_dataset import CustomCOCO
-import vision.datasets.coco_aug as cca
 
 import warnings
 warnings.filterwarnings(action='ignore')
@@ -208,23 +205,6 @@ if __name__ == '__main__':
     target_transform = MatchPrior(config.priors, config.center_variance,
                                   config.size_variance, 0.5)
 
-    # DEFAULT_TRANSFORMS = transforms.Compose([
-    #     cca.AbsoluteLabels(),
-    #     cca.PadSquare(),
-    #     cca.RelativeLabels(),
-    #     cca.ToTensor(),
-    # ])
-    #
-    # AUGMENTATION_TRANSFORMS = transforms.Compose([
-    #     cca.AbsoluteLabels(),
-    #     cca.DefaultAug(),
-    #     cca.PadSquare(),
-    #     cca.RelativeLabels(),
-    #     cca.ToTensor(),
-    # ])
-    # train_transform = AUGMENTATION_TRANSFORMS
-    # test_transform = DEFAULT_TRANSFORMS
-
     logging.info("Prepare training datasets.")
     datasets = []
     for dataset_path in args.datasets:
@@ -256,7 +236,7 @@ if __name__ == '__main__':
         datasets.append(dataset)
     logging.info(f"Stored labels into file {label_file}.")
     # train_dataset = ConcatDataset(datasets)
-    train_dataset = datasets[0]
+    train_dataset = datasets[0]         # For COCO
     logging.info("Train dataset size: {}".format(len(train_dataset)))
     train_loader = DataLoader(train_dataset, args.batch_size,
                               num_workers=args.num_workers,
@@ -360,6 +340,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     logging.info(f"Start training from epoch {last_epoch + 1}.")
+
+    save_term = 2
     for epoch in range(last_epoch + 1, args.num_epochs):
         scheduler.step()
         train(train_loader, net, criterion, optimizer,
@@ -377,8 +359,10 @@ if __name__ == '__main__':
         #     net.save(model_path)
         #     logging.info(f"Saved model {model_path}")
 
-        # Skip validation and save model for faster training
-        model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}".pth)
-        net.save(model_path)
-        logging.info(f"Saved model {model_path}")
-        
+        # If you want skip validation and save model for faster training
+        if epoch and epoch % save_term == 0:
+            model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
+            net.save(model_path)
+            logging.info(f"Saved model {model_path}")
+
+

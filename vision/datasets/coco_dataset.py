@@ -85,17 +85,7 @@ class CustomCOCO(Dataset):
                 img, boxes, classes = self.transform(img, boxes, classes)
             if self.target_transform:
                 boxes, classes = self.target_transform(boxes, classes)
-        # bbox = np.concatenate((classes, boxes), axis=1)
-        # print('original', 'id=', img_id, img.shape, '\n', bbox.shape)
 
-        # """
-        # bounding box = [x,y,w,h]
-        #     Note that (x,y) of COCO dataset stands for box' top left coordinate, Not center of box
-        #
-        # We choose augmentation method from pytorch-yolov3's method
-        # Please note that bbox = (N, 6) after iaa augmentation
-        #     bbox = [sample index, label, x, y, w, h]
-        # """
         except Exception:
             return
 
@@ -111,28 +101,13 @@ class CustomCOCO(Dataset):
         batch = [data for data in batch if data is not None]
         # for b_ in batch[0]:
         #     print(b_.shape)       # (3,300,300) : img.shape , (8732, 4) : box coordinate , (8732, 1) : classification
-        # paths, imgs, bb_targets = list(zip(*batch))
+
         imgs, bb_targets, classes = list(zip(*batch))
-        print('Collate', len(classes) == len(imgs) == len(bb_targets))
-        # Selects new image size every 10 batch
-        if self.multiscale and self.batch_count % 40 == 0:
-            self.img_size = random.choice(
-                range(self.min_size, self.max_size + 1, 32))
-
-        ## Resize images to input shape
-        # imgs = torch.stack([resize(img, self.img_size) for img in imgs])
-
-        # # Add sample index to targets
-        # for i, boxes in enumerate(bb_targets):
-        #     boxes[:, 0] = i
-        # bb_targets = torch.cat(bb_targets, 0)
-        # classes = torch.cat(classes, 0)
         imgs = torch.stack(imgs)
         bb_targets = torch.stack(bb_targets)
         classes = torch.stack(classes)
-        print('After Collate', imgs.shape, bb_targets.shape, classes.shape)
-        # return paths, imgs, bb_targets
         return imgs, bb_targets, classes
+
 
 def resize(image, size):
     image = F.interpolate(image.unsqueeze(0), size=size, mode="nearest").squeeze(0)
