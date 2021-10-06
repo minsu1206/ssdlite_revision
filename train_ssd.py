@@ -121,7 +121,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
     batch_len = 0
     for i, data in enumerate(loader):
         start = time.process_time()
-        if i % 20 == 0:
+        if i and i % 20 == 0:
             print('Batch :: ', str(i), ' fps :: ', round(avg_time / batch_len, 5))
             batch_len = 0
             avg_time = 0
@@ -377,6 +377,7 @@ if __name__ == '__main__':
                 model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
             else:
                 model_path = args.path_save.replace('models/', '')
+                model_path = os.path.join(model_path, f"{args.net}-Epoch-{epoch}.pth")
             net.save(model_path)
             logging.info(f"Saved model {model_path}")
 
