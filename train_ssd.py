@@ -97,6 +97,7 @@ parser.add_argument('--use_cuda', default=False, type=str2bool,
 
 parser.add_argument('--checkpoint_folder', default='models/',
                     help='Directory for saving checkpoint models')
+parser.add_argument('--path_save', type=str)
 parser.add_argument('--colab', default=False,
                     help='If you use colab, pth will be saved in your gdrive')
 
@@ -375,7 +376,7 @@ if __name__ == '__main__':
             if not args.colab:
                 model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
             else:
-                model_path = args.checkpoint_folder.replace('models/', '')
+                model_path = args.path_save.replace('models/', '')
             net.save(model_path)
             logging.info(f"Saved model {model_path}")
 
