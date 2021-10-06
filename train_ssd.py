@@ -97,6 +97,8 @@ parser.add_argument('--use_cuda', default=False, type=str2bool,
 
 parser.add_argument('--checkpoint_folder', default='models/',
                     help='Directory for saving checkpoint models')
+parser.add_argument('--colab', default=False,
+                    help='If you use colab, pth will be saved in your gdrive')
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -361,7 +363,10 @@ if __name__ == '__main__':
 
         # If you want skip validation and save model for faster training
         if epoch and epoch % save_term == 0:
-            model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
+            if not args.colab:
+                model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
+            else:
+                model_path = args.checkpoint_folder.replace('models/', '')
             net.save(model_path)
             logging.info(f"Saved model {model_path}")
 
