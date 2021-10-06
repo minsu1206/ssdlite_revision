@@ -77,7 +77,9 @@ class CustomCOCO(Dataset):
         bboxes = []
         for target_ in target:
             classes.append(self.old2new[target_['category_id']])
-            bboxes.append(target_['bbox'])
+            tx, ty, w, h = target_['bbox']
+            box_ = [tx, ty, tx+w, ty+h]
+            bboxes.append(box_)
         boxes = np.array(bboxes, dtype=np.float32)
         classes = np.array(classes, dtype=np.int64).reshape(len(boxes), 1)
         try:
