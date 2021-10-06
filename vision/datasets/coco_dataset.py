@@ -71,7 +71,13 @@ class CustomCOCO(Dataset):
         self.batch_count += 1
         img_id = self.ids[idx]
         path = self.coco.loadImgs(img_id)[0]["coco_url"]
-        img = io.imread(path)
+        reading = False
+        while not reading:
+            try:
+                img = io.imread(path)
+                reading = True
+            except ConnectionResetError:
+                continue
         target = self.coco.loadAnns(self.coco.getAnnIds(img_id))
         classes = []
         bboxes = []
