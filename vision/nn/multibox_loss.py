@@ -31,13 +31,13 @@ class MultiboxLoss(nn.Module):
             labels (batch_size, num_priors): real labels of all the priors.
             boxes (batch_size, num_priors, 4): real boxes corresponding all the priors.
         """
-        print('Multibox check :: ')
-        print(confidence.shape, predicted_locations.shape, labels.shape, gt_locations.shape)
+        # print('Multibox check :: ')
+        # print(confidence.shape, predicted_locations.shape, labels.shape, gt_locations.shape)
         num_classes = confidence.size(2)
         with torch.no_grad():
             # derived from cross_entropy=sum(log(p))
             loss = -F.log_softmax(confidence, dim=2)[:, :, 0]
-            print('Loss shape', loss.shape)
+            # print('Loss shape', loss.shape)
             mask = box_utils.hard_negative_mining(loss, labels, self.neg_pos_ratio)
 
         # print(confidence.shape, mask.shape)

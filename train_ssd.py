@@ -115,8 +115,15 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
     running_loss = 0.0
     running_regression_loss = 0.0
     running_classification_loss = 0.0
+    import time
+    avg_time = 0.0
+    batch_len = 0
     for i, data in enumerate(loader):
-        print('Batch :: ', str(i))
+        start = time.process_time()
+        if i % 20 == 0:
+            print('Batch :: ', str(i), ' fps :: ', round(avg_time / batch_len, 5))
+            batch_len = 0
+            avg_time = 0
         images, boxes, labels = data
 
         images = images.to(device)
@@ -133,6 +140,8 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         running_loss += loss.item()
         running_regression_loss += regression_loss.item()
         running_classification_loss += classification_loss.item()
+        avg_time += time.process_time() - start
+        batch_len += len(images)
         if i and i % debug_steps == 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
