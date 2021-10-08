@@ -2,7 +2,6 @@ vision/datasets/__pycache__/__init__.cpython-38.pyc
 vision/datasets/__pycache__/coco_dataset.cpython-38.pyc
 vision/datasets/__pycache__/open_images.cpython-38.pyc
 vision/datasets/__pycache__/voc_dataset.cpython-38.pyc
-vision/nn/modified_mobilenet_v2.py
 vision/nn/__pycache__/__init__.cpython-38.pyc
 vision/nn/__pycache__/mobilenet.cpython-38.pyc
 vision/nn/__pycache__/mobilenet_v2.cpython-38.pyc
