@@ -91,6 +91,7 @@ parser.add_argument('--validation_epochs', default=5, type=int,
                     help='the number epochs')
 parser.add_argument('--debug_steps', default=100, type=int,
                     help='Set the debug log output frequency.')
+parser.add_argument('--save_steps', default=400, type=int)
 parser.add_argument('--use_cuda', default=False, type=str2bool,
                     help='Use CUDA to train model')
 
@@ -155,7 +156,14 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
             running_loss = 0.0
             running_regression_loss = 0.0
             running_classification_loss = 0.0
-
+        if i and i % args.save_steps == 0:
+            if not args.colab:
+                model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}-Batch-{i}.pth")
+            else:
+                model_path = args.path_save.replace('models/', '')
+                model_path = os.path.join(model_path, f"{args.net}-Epoch-{epoch}-Batch-{i}.pth")
+            net.save(model_path)
+            logging.info(f"Saved model {model_path}")
 
 def test(loader, net, criterion, device):
     net.eval()
@@ -355,7 +363,6 @@ if __name__ == '__main__':
 
     logging.info(f"Start training from epoch {last_epoch + 1}.")
 
-    save_term = 2
     for epoch in range(last_epoch + 1, args.num_epochs):
         scheduler.step()
         train(train_loader, net, criterion, optimizer,
@@ -374,13 +381,6 @@ if __name__ == '__main__':
         #     logging.info(f"Saved model {model_path}")
 
         # If you want skip validation and save model for faster training
-        if epoch and epoch % save_term == 0:
-            if not args.colab:
-                model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
-            else:
-                model_path = args.path_save.replace('models/', '')
-                model_path = os.path.join(model_path, f"{args.net}-Epoch-{epoch}.pth")
-            net.save(model_path)
-            logging.info(f"Saved model {model_path}")
+
 
 
