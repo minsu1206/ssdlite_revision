@@ -153,6 +153,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
                 f"Average Regression Loss {avg_reg_loss:.4f}, " +
                 f"Average Classification Loss: {avg_clf_loss:.4f}"
             )
+
             running_loss = 0.0
             running_regression_loss = 0.0
             running_classification_loss = 0.0
@@ -164,6 +165,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
                 model_path = os.path.join(model_path, f"{args.net}-Epoch-{epoch}-Batch-{i}.pth")
             net.save(model_path)
             logging.info(f"Saved model {model_path}")
+
 
 def test(loader, net, criterion, device):
     net.eval()

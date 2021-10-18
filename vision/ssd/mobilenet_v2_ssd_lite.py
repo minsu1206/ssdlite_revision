@@ -69,6 +69,7 @@ def create_custom_ssd_lite(num_classes, width_mult=1.0, use_batch_norm=True, onn
         GraphPath(14, 'conv', 3),
         19,
     ]
+
     extras = ModuleList([
         ModifiedResidual(1280, 512, stride=2, expand_ratio=0.2),
         ModifiedResidual(512, 256, stride=2, expand_ratio=0.25),
@@ -100,6 +101,18 @@ def create_custom_ssd_lite(num_classes, width_mult=1.0, use_batch_norm=True, onn
 
 
 def create_mobilenetv2_ssd_lite_predictor(net, candidate_size=200, nms_method=None, sigma=0.5,
+                                          device=torch.device('cpu')):
+    predictor = Predictor(net, config.image_size, config.image_mean,
+                          config.image_std,
+                          nms_method=nms_method,
+                          iou_threshold=config.iou_threshold,
+                          candidate_size=candidate_size,
+                          sigma=sigma,
+                          device=device)
+    return predictor
+
+
+def create_custom_ssd_lite_predictor(net, candidate_size=200, nms_method=None, sigma=0.5,
                                           device=torch.device('cpu')):
     predictor = Predictor(net, config.image_size, config.image_mean,
                           config.image_std,

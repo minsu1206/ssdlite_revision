@@ -51,14 +51,14 @@ def conv_1x1_lin(inp, oup, use_batch_norm=True):
 
 
 class ModifiedResidual(nn.Module):
-    def __init__(self, inp, hidden_dim, stride, expand_ratio, use_batch_norm=True, onnx_compatible=False):
+    def __init__(self, inp, oup, stride, expand_ratio, use_batch_norm=True, onnx_compatible=False):
         super(ModifiedResidual, self).__init__()
         ReLU = nn.ReLU if onnx_compatible else nn.ReLU6
 
         self.stride = stride
         assert stride in [1, 2]
 
-        oup = hidden_dim * expand_ratio
+        hidden_dim = oup * expand_ratio
         self.use_res_connect = self.stride == 1 and inp == oup
         self.use_proj_res_connect = self.stride == 1 and inp != oup
 
@@ -129,14 +129,14 @@ class CustomNet(nn.Module):
         self.features = [conv_bn(3, input_channel, 2, onnx_compatible=onnx_compatible)]
         # building inverted residual blocks
         for t, c, n, s in modified_residual_setting:
-            hidden_channel = int(c * width_mult)
+            oup = int(c * width_mult)
             for i in range(n):
                 if i == 0:
-                    self.features.append(block(input_channel, hidden_channel, s,
+                    self.features.append(block(input_channel, oup, s,
                                                expand_ratio=t, use_batch_norm=use_batch_norm,
                                                onnx_compatible=onnx_compatible))
                 else:
-                    self.features.append(block(input_channel, hidden_channel, 1,
+                    self.features.append(block(input_channel, oup, 1,
                                                expand_ratio=t, use_batch_norm=use_batch_norm,
                                                onnx_compatible=onnx_compatible))
                 input_channel = hidden_channel * t
@@ -174,3 +174,5 @@ class CustomNet(nn.Module):
                 n = m.weight.size(1)
                 m.weight.data.normal_(0, 0.01)
                 m.bias.data.zero_()
+
+
