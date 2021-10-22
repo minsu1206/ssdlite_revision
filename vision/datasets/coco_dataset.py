@@ -105,6 +105,9 @@ class CustomCOCO(Dataset):
     def __len__(self):
         return len(self.ids)
 
+    def get_annotation(self, idx):
+        self.__getitem__(idx)
+
     def collate_fn(self, batch):
         self.batch_count += 1
 
