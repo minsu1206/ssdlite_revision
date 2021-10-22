@@ -61,7 +61,6 @@ class CustomCOCO(Dataset):
 
         self.ids = list(sorted(self.coco.imgs.keys()))
         logging.info("Read COCO Dataset")
-
         self.multiscale = True
         self.img_size = 416
         self.min_size = self.img_size - 3 * 32

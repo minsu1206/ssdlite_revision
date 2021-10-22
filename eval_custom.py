@@ -123,27 +123,31 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() and args.use_cuda el
 #     else:
 #         return measurements.compute_average_precision(precision, recall)
 
-def test(loader, net, device):
-    net.eval()
-    running_loss = 0.0
-    running_regression_loss = 0.0
-    running_classification_loss = 0.0
-    num = 0
+def test(dataset, predictor, device):
     # TODO : want to make {key:class -> val: [mean precision per each class, mean IOU per each class]}
 
     result_table = {}
-    for _, data in enumerate(loader):
-        img, box, label = data
-        print(img, box, label)
-        img = img.to(device)
-        box = box.to(device)
-        label = label.to(device)
-        num += 1
+    for i in range(len(dataset)):
+        img, b_, l_ = dataset[i]
+        """
+        img = (B, 3, 300, 300)
+        box = (B, 3000, 4) [<- mobileNet v2]
+        label = (B, 3000, 1) [<- mobileNet v2]
+        """
 
-        with torch.no_grad():
-            confidence, locations = net(img)
+        boxes, labels, probs = predictor.predict(img)
+        # print('Predicted ::', boxes, labels, probs)
+        # print('GT ::', b_, l_)
 
-    return
+        print('Predicted ::', boxes.shape, labels.shape, probs.shape) # (M,4), (M,1), (M)
+        print('GT ::', b_.shape, l_.shape)      # (N, 4) , (N, 1)
+        # N, M 은 가변적임.
+        # TODO : ground truth에 해당하는 class만 predicted labels에서 그 인덱스를 추출.
+        # TODO : 추출한 인덱스를 이용해 box coordinate로 GT box와 IOU 계산
+        # TODO : IOU가 최대가 되도록 하는 인덱스만 골라냄.
+        # TODO : result_table 의 key:label에 최종 인덱스 결과의 박스 좌표, prob값을 넣어줌.
+
+    return result_table
 
 
 
@@ -160,7 +164,7 @@ if __name__ == '__main__':
     elif args.dataset_type == 'COCO':
         # TODO : COCO dataset
         dataset = CustomCOCO(args.dataset,
-                             mode=2)
+                             mode=1)
         # raise NotImplementedError()
 
     # true_case_stat, all_gb_boxes, all_difficult_cases = group_annotation_by_class(dataset)
@@ -207,10 +211,5 @@ if __name__ == '__main__':
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    test_loader = DataLoader(dataset, 1,
-                            num_workers=1,
-                            shuffle=False,
-                            collate_fn=dataset.collate_fn)
 
-
-    test(test_loader, net, device=DEVICE)
+    result = test(dataset, predictor, device=DEVICE)
