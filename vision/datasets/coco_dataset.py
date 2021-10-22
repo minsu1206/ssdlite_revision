@@ -33,6 +33,7 @@ class CustomCOCO(Dataset):
         self.transform = transform
         self.target_transform = target_transform
         # self.data_local = img_root if type(img_root) == 'str' else False
+        self.mode = mode
         self.coco = dir_coco(self.root, mode_num=mode)
         cats = self.coco.loadCats(self.coco.getCatIds())
         nms = [cat['name'] for cat in cats]
@@ -88,16 +89,18 @@ class CustomCOCO(Dataset):
             bboxes.append(box_)
         boxes = np.array(bboxes, dtype=np.float32)
         classes = np.array(classes, dtype=np.int64).reshape(len(boxes), 1)
-        try:
-            if self.transform:
-                img, boxes, classes = self.transform(img, boxes, classes)
-            if self.target_transform:
-                boxes, classes = self.target_transform(boxes, classes)
+        if self.mode == 0:
+            try:
+                if self.transform:
+                    img, boxes, classes = self.transform(img, boxes, classes)
+                if self.target_transform:
+                    boxes, classes = self.target_transform(boxes, classes)
 
-        except Exception:
-            return
-
-        return img, boxes, classes
+            except Exception:
+                return
+            return img, boxes, classes
+        else:
+            return img, boxes, classes
 
     def __len__(self):
         return len(self.ids)
