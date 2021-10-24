@@ -127,8 +127,10 @@ def test(dataset, predictor, device):
     # TODO : want to make {key:class -> val: [mean precision per each class, mean IOU per each class]}
 
     result_table = {}
+    true_positive = np.zeros(len(dataset))
+    false_positive = np.zeros(len(dataset))
     for i in range(len(dataset)):
-        img, b_, l_ = dataset[i]
+        img, gt_boxes, gt_labels = dataset[i]
         """
         img = (B, 3, 300, 300)
         box = (B, 3000, 4) [<- mobileNet v2]
@@ -140,12 +142,34 @@ def test(dataset, predictor, device):
         # print('GT ::', b_, l_)
 
         print('Predicted ::', boxes.shape, labels.shape, probs.shape) # (M,4), (M,1), (M)
-        print('GT ::', b_.shape, l_.shape)      # (N, 4) , (N, 1)
+        print('GT ::', gt_boxes.shape, gt_labels.shape)      # (N, 4) , (N, 1)
         # N, M 은 가변적임.
-        # TODO : ground truth에 해당하는 class만 predicted labels에서 그 인덱스를 추출.
-        # TODO : 추출한 인덱스를 이용해 box coordinate로 GT box와 IOU 계산
-        # TODO : IOU가 최대가 되도록 하는 인덱스만 골라냄.
-        # TODO : result_table 의 key:label에 최종 인덱스 결과의 박스 좌표, prob값을 넣어줌.
+        # (1) TODO : ground truth에 해당하는 class만 predicted labels에서 그 인덱스를 추출.
+        # (2) TODO : 추출한 인덱스를 이용해 box coordinate로 GT box와 IOU 계산 :: box_utils에 있는 함수 이용 또는 숙제로 구현한 함수 이용
+        # (3) TODO : IOU가 최대가 되도록 하는 인덱스만 골라냄.
+        # (4) TODO : result_table 의 key:label에 최종 인덱스 결과의 박스 좌표, prob값을 넣어줌.
+
+        # (1)
+        for i, gt_label in enumerate(gt_labels):
+            pred_idx = []
+            for j, label in enumerate(labels):
+                if label[0] == gt_label[0]:
+                    pred_idx.append(j)
+            pred_box_ = boxes[pred_idx]
+
+            # (2) & (3)
+            # TODO: predicted label에 GT label이 없는 경우도 처리해야 함.
+
+            ious = box_utils.iou_of(pred_box_, gt_boxes[i])
+            max_iou = torch.max(ious).item()
+            max_arg = torch.argmax(ious).item()
+            if max_iou > args.iou_threshold:
+                true_positive[i] = 1
+                prob_ = probs[max_arg]
+            else:
+                false_positive[i] = 1
+
+            # (4)
 
     return result_table
 
