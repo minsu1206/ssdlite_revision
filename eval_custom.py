@@ -1,10 +1,4 @@
 import torch
-from vision.ssd.vgg_ssd import create_vgg_ssd, create_vgg_ssd_predictor
-from vision.ssd.mobilenetv1_ssd import create_mobilenetv1_ssd, create_mobilenetv1_ssd_predictor
-from vision.ssd.mobilenetv1_ssd_lite import create_mobilenetv1_ssd_lite, create_mobilenetv1_ssd_lite_predictor
-from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite, create_squeezenet_ssd_lite_predictor
-from vision.datasets.voc_dataset import VOCDataset
-from vision.datasets.open_images import OpenImagesDataset
 from vision.utils import box_utils, measurements
 from vision.utils.misc import str2bool, Timer
 from vision.datasets.coco_dataset import CustomCOCO
@@ -17,15 +11,14 @@ import logging
 import sys
 from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite, create_mobilenetv2_ssd_lite_predictor
 from vision.ssd.mobilenet_v2_ssd_lite import create_custom_ssd_lite, create_custom_ssd_lite_predictor
-from vision.ssd.mobilenetv3_ssd_lite import create_mobilenetv3_large_ssd_lite, create_mobilenetv3_small_ssd_lite
-
+from vision.utils.info_loss import *
 
 parser = argparse.ArgumentParser(description="SSD Evaluation on VOC Dataset.")
-parser.add_argument('--net', default="vgg16-ssd",
+parser.add_argument('--net', default="mb2-ssd-lite",
                     help="The network architecture, it should be of mb1-ssd, mb1-ssd-lite, mb2-ssd-lite or vgg16-ssd.")
 parser.add_argument("--trained_model", type=str)
 
-parser.add_argument("--dataset_type", default="voc", type=str,
+parser.add_argument("--dataset_type", default="COCO", type=str,
                     help='Specify dataset type. Currently support voc and open_images.')
 parser.add_argument("--dataset", type=str, help="The root directory of the VOC dataset or Open Images dataset.")
 parser.add_argument("--label_file", type=str, help="The label file path.")
@@ -123,23 +116,14 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() and args.use_cuda el
 #     else:
 #         return measurements.compute_average_precision(precision, recall)
 
-def test(dataset, predictor, device):
+def test(dataset, predictor):
     # TODO : want to make {key:class -> val: [mean precision per each class, mean IOU per each class]}
-
     result_table = {}
     true_positive = np.zeros(len(dataset))
     false_positive = np.zeros(len(dataset))
     for i in range(len(dataset)):
-        img, gt_boxes, gt_labels = dataset[i]
-        """
-        img = (B, 3, 300, 300)
-        box = (B, 3000, 4) [<- mobileNet v2]
-        label = (B, 3000, 1) [<- mobileNet v2]
-        """
-
+        img, gt_boxes, gt_labels = dataset[i]   # img = (B, 3, 300, 300). At test, B=1
         boxes, labels, probs = predictor.predict(img)
-        # print('Predicted ::', boxes, labels, probs)
-        # print('GT ::', b_, l_)
 
         print('Predicted ::', boxes.shape, labels.shape, probs.shape) # (M,4), (M,1), (M)
         print('GT ::', gt_boxes.shape, gt_labels.shape)      # (N, 4) , (N, 1)
@@ -174,6 +158,15 @@ def test(dataset, predictor, device):
     return result_table
 
 
+def test_report(result_table):
+    mAP = 0
+    mIOU = 0
+
+    # TODO : by using result_table, caculate mAP and mIOU.
+    # reference : vision/utils/measurement.py
+
+    return mAP, mIOU
+
 
 if __name__ == '__main__':
     eval_path = pathlib.Path(args.eval_dir)
@@ -181,31 +174,16 @@ if __name__ == '__main__':
     timer = Timer()
     class_names = [name.strip() for name in open(args.label_file).readlines()]
 
-    if args.dataset_type == "voc":
-        dataset = VOCDataset(args.dataset, is_test=True)
-    elif args.dataset_type == 'open_images':
-        dataset = OpenImagesDataset(args.dataset, dataset_type="test")
-    elif args.dataset_type == 'COCO':
-        # TODO : COCO dataset
+    if args.dataset_type == 'COCO':
+        # TODO : COCO dataset -> Done
         dataset = CustomCOCO(args.dataset,
                              mode=1)
-        # raise NotImplementedError()
+    else:
+        raise NotImplementedError('Other Datasets are not supported')
 
     # true_case_stat, all_gb_boxes, all_difficult_cases = group_annotation_by_class(dataset)
-    if args.net == 'vgg16-ssd':
-        net = create_vgg_ssd(len(class_names), is_test=True)
-    elif args.net == 'mb1-ssd':
-        net = create_mobilenetv1_ssd(len(class_names), is_test=True)
-    elif args.net == 'mb1-ssd-lite':
-        net = create_mobilenetv1_ssd_lite(len(class_names), is_test=True)
-    elif args.net == 'sq-ssd-lite':
-        net = create_squeezenet_ssd_lite(len(class_names), is_test=True)
-    elif args.net == 'mb2-ssd-lite':
+    if args.net == 'mb2-ssd-lite':
         net = create_mobilenetv2_ssd_lite(len(class_names), width_mult=args.mb2_width_mult, is_test=True)
-    elif args.net == 'mb3-large-ssd-lite':
-        net = create_mobilenetv3_large_ssd_lite(len(class_names), is_test=True)
-    elif args.net == 'mb3-small-ssd-lite':
-        net = create_mobilenetv3_small_ssd_lite(len(class_names), is_test=True)
     elif args.net == 'custom':
         net = create_custom_ssd_lite(len(class_names), is_test=True)
     else:
@@ -217,23 +195,15 @@ if __name__ == '__main__':
     net.load(args.trained_model)
     net = net.to(DEVICE)
     print(f'It took {timer.end("Load Model")} seconds to load the model.')
-    if args.net == 'vgg16-ssd':
-        predictor = create_vgg_ssd_predictor(net, nms_method=args.nms_method, device=DEVICE)
-    elif args.net == 'mb1-ssd':
-        predictor = create_mobilenetv1_ssd_predictor(net, nms_method=args.nms_method, device=DEVICE)
-    elif args.net == 'mb1-ssd-lite':
-        predictor = create_mobilenetv1_ssd_lite_predictor(net, nms_method=args.nms_method, device=DEVICE)
-    elif args.net == 'sq-ssd-lite':
-        predictor = create_squeezenet_ssd_lite_predictor(net, nms_method=args.nms_method, device=DEVICE)
-    elif args.net == 'mb2-ssd-lite' or args.net == "mb3-large-ssd-lite" or args.net == "mb3-small-ssd-lite":
+
+    if args.net == 'mb2-ssd-lite' or args.net == "mb3-large-ssd-lite" or args.net == "mb3-small-ssd-lite":
         predictor = create_mobilenetv2_ssd_lite_predictor(net, nms_method=args.nms_method, device=DEVICE)
     elif args.net == 'custom':
-        # TODO
+        # TODO -> Done
         predictor = create_custom_ssd_lite_predictor(net, nms_method=args.nms_method, device=DEVICE)
     else:
         logging.fatal("The net type is wrong. It should be one of vgg16-ssd, mb1-ssd and mb1-ssd-lite.")
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-
-    result = test(dataset, predictor, device=DEVICE)
+    result = test(dataset, predictor)
